@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  trader:
+    build: .
+    ports:
+      - "8765:8765"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

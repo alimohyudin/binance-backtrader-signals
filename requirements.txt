@@ -1,0 +1,6 @@
+backtrader
+python-binance
+pandas
+numpy
+requests
+schedule
