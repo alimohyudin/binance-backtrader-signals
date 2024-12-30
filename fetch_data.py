@@ -70,6 +70,10 @@ def fetch_and_append_kline_data(symbol, start_date, end_date, interval=Client.KL
             break
         current_date = datetime.strptime(formatted_klines[-1][0], '%m-%d-%YT%H:%M:%S.000Z') + timedelta(minutes=3)
 
+    # Exclude the last row of new data
+    if new_data:
+        new_data = new_data[:-1]
+
     # Write the combined data to the CSV file
     with open(output_file, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -80,6 +84,11 @@ def myfetch(symbol, start_date, end_date):
 
 def fetch_1year_data(symbol, interval=Client.KLINE_INTERVAL_3MINUTE, output_folder='./data'):
     start_date = '2024-01-01'
+    end_date = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+    fetch_and_append_kline_data(symbol, start_date, end_date, interval, output_folder)
+    
+def fetch_1month_data(symbol, interval=Client.KLINE_INTERVAL_3MINUTE, output_folder='./data'):
+    start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
     end_date = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
     fetch_and_append_kline_data(symbol, start_date, end_date, interval, output_folder)
 # Example usage

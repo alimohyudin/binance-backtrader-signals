@@ -6,7 +6,7 @@ import asyncio
 import websockets
 import json
 from strategy.MACDStrategy import MACDStrategy
-from fetch_data import fetch_1year_data
+from fetch_data import fetch_1month_data
 
 count = 1
 last_signal = None
@@ -14,9 +14,9 @@ signals = []
 clients = set()
 
 async def broadcast_signal(signal):
-    if clients:  # asyncio.wait doesn't accept an empty list
+    if clients:  # asyncio.gather doesn't accept an empty list
         message = f"New signal: {signal['signal']}, Price: {signal['price']}, Datetime: {signal['datetime']}"
-        await asyncio.wait([client.send(message) for client in clients])
+        await asyncio.gather(*[client.send(message) for client in clients])
 
 async def handler(websocket):
     clients.add(websocket)
@@ -32,8 +32,8 @@ async def handler(websocket):
         clients.remove(websocket)
 
 async def start_server():
-    server = await websockets.serve(handler, "localhost", 8765)
-    print("WebSocket server started on ws://localhost:8765")
+    server = await websockets.serve(handler, "0.0.0.0", 8765)
+    print("WebSocket server started on ws://0.0.0.0:8765")
     await server.wait_closed()
     
 def _handle_signals_callback(data):
@@ -52,7 +52,7 @@ def run_strategy():
     symbol = 'BTCUSDT'
     interval = '3m'
     # Fetch 1 year of data
-    fetch_1year_data(symbol, interval)
+    fetch_1month_data(symbol, interval)
 
     cerebro = bt.Cerebro()
     data = bt.feeds.GenericCSVData(
@@ -82,18 +82,20 @@ def run_strategy():
 
 
 
+async def main():
+    schedule.every(30).seconds.do(run_strategy)
+
+    # Run scheduled tasks in a separate thread
+    def run_schedule():
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+
+    import threading
+    schedule_thread = threading.Thread(target=run_schedule, daemon=True)
+    schedule_thread.start()
+
+    await start_server()
+
 if __name__ == '__main__':
-    run_strategy()
-
-    def check_and_run_strategy():
-        current_minute = datetime.datetime.now().minute
-        if current_minute % 3 == 0:
-            run_strategy()
-
-    schedule.every().minute.do(check_and_run_strategy)
-
-    asyncio.run(start_server())
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    asyncio.run(main())
