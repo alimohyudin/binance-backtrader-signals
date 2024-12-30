@@ -15,7 +15,7 @@ clients = set()
 
 async def broadcast_signal(signal):
     if clients:  # asyncio.gather doesn't accept an empty list
-        message = f"New signal: {signal['signal']}, Price: {signal['price']}, Datetime: {signal['datetime']}"
+        message = json.dumps(signal, default=str)
         await asyncio.gather(*[client.send(message) for client in clients])
 
 async def handler(websocket):
@@ -28,6 +28,11 @@ async def handler(websocket):
                     for signal in signals
                 ]
                 await websocket.send(json.dumps(signals_serializable))
+            if message == "get_last_signal":
+                if signals:
+                    my_last_signal = signals[-1]
+                    signals_serializable = {**my_last_signal, 'datetime': my_last_signal['datetime'].strftime('%Y-%m-%dT%H:%M:%S')}
+                    await websocket.send(json.dumps(signals_serializable))
     finally:
         clients.remove(websocket)
 
@@ -54,13 +59,16 @@ def run_strategy():
     # Fetch 1 year of data
     fetch_1month_data(symbol, interval)
 
+    end_date = datetime.datetime.utcnow()
+    start_date = end_date - datetime.timedelta(days=15)
+
     cerebro = bt.Cerebro()
     data = bt.feeds.GenericCSVData(
         dataname=f'./data/{symbol}_{interval}.csv',  # Added interval to the data file path
         dtformat='%m-%d-%YT%H:%M:%S.000Z',  # New format to match '2024-12-01T00:00:00.000Z'
         timeframe=bt.TimeFrame.Minutes,
-        fromdate=datetime.datetime(2024, 12, 16),
-        todate=datetime.datetime(2024, 12, 31),
+        fromdate=start_date,
+        todate=end_date,
         compression=3,
         openinterest=-1,
     )
