@@ -23,7 +23,7 @@ def run_strategy(params):
     cerebro.addstrategy(MACDStrategy, **strategy_params)
 
     data = bt.feeds.GenericCSVData(
-        dataname='./backtrader/data/BTCUSDT-3min-1year-2024.csv',
+        dataname='./backtrader/data/BTCUSDT_3m.csv',
         # dataname='./backtrader/data/BTCUSDT.csv',
         dtformat='%m-%d-%YT%H:%M:%S.000Z',  # New format to match '2024-12-01T00:00:00.000Z'
         timeframe=bt.TimeFrame.Minutes,
