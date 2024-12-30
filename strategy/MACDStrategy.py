@@ -35,7 +35,6 @@ class MACDStrategy(bt.Strategy):
         self.a_position_closed = True
         self.a_last_position = Position()
         self.a_signal = ""
-        self.a_wait_for_order_completion = False
         self.a_SL_or_TP_hit = False
 
         # Indicators
@@ -52,64 +51,6 @@ class MACDStrategy(bt.Strategy):
         # Custom counters for `barssince`
         self.bars_since_oversold = None
         self.bars_since_overbought = None
-
-    def log(self, txt):
-        dt = self.datas[0].datetime.datetime(0)
-
-        if txt == 'OPEN':
-            self.a_position_closed = False
-            self.a_last_position.size = self.position.size
-            self.a_last_position.price = self.position.price
-            self.a_last_position.time = dt
-            if self.params.callback:
-                self.params.callback({
-                    'signal': 'buy' if self.a_last_position.size > 0 else 'sell',
-                    'price': self.data.close[0],
-                    'datetime': self.datas[0].datetime.datetime(0)
-                })
-
-        if txt == 'CLOSE':
-            self.a_calculated_profit += self.a_last_position.size * (self.data.close[0] - self.a_last_position.price)
-            self.a_position_closed = True
-            self.a_last_position.size = 0
-            self.a_last_position.price = 0
-            
-            if self.params.callback:
-                self.params.callback({
-                    'signal': 'close',
-                    'price': self.data.close[0],
-                    'datetime': self.datas[0].datetime.datetime(0)
-                })
-
-    def notify_order(self, order):
-        if order.status in [order.Completed]:
-            self.a_wait_for_order_completion = False
-            if order.isbuy():
-                if self.a_position_closed:
-                    self.log("OPEN")
-                else:
-                    self.log("CLOSE")
-
-                    if not self.a_SL_or_TP_hit:
-                        self.a_wait_for_order_completion = True
-                        if self.a_signal == "buy":
-                            self.buy(size=(self.broker.getvalue() - 1) / self.data.close[0])
-                        elif self.a_signal == "sell":
-                            self.sell(size=(self.broker.getvalue() - 1) / self.data.close[0])
-            elif order.issell():
-                if self.a_position_closed:
-                    self.log("OPEN")
-                else:
-                    self.log("CLOSE")
-
-                    if not self.a_SL_or_TP_hit:
-                        self.a_wait_for_order_completion = True
-                        if self.a_signal == "buy":
-                            self.buy(size=(self.broker.getvalue() - 1) / self.data.close[0])
-                        elif self.a_signal == "sell":
-                            self.sell(size=(self.broker.getvalue() - 1) / self.data.close[0])
-        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
-            self.log(f"Order {order.info['name']} was not completed: {order.Status[order.status]}")
 
     def next(self):
         if self.rsi[0] <= self.params.rsi_oversold:
@@ -136,25 +77,32 @@ class MACDStrategy(bt.Strategy):
             if self.a_log_trade - 1 == self.a_total_closed_positions:
                 print("buy signal")
             
-            
-            self.a_signal = "buy"
-            self.a_SL_or_TP_hit = False
+            if self.a_signal == "sell" or self.a_signal == "":
+                self.a_signal = "buy"
+                self.a_SL_or_TP_hit = False
 
-            self.close_short()
-            if self.a_position_closed and not self.a_wait_for_order_completion:
-                self.buy(size=self.broker.getcash() / self.data.close[0])
+                if self.params.callback:
+                    self.params.callback({
+                        'signal': 'buy',
+                        'price': self.data.close[0],
+                        'datetime': self.datas[0].datetime.datetime(0)
+                    })
 
         # Short Strategy
         if self.sell_signal and self.params.enable_short_strategy:
             if self.a_log_trade - 1 == self.a_total_closed_positions:
                 print("sell signal")
             
+            if self.a_signal == "buy" or self.a_signal == "":
+                self.a_signal = "sell"
+                self.a_SL_or_TP_hit = False
                 
-            self.a_signal = "sell"
-            self.a_SL_or_TP_hit = False
-            self.close_long()
-            if self.a_position_closed and not self.a_wait_for_order_completion:
-                self.sell(size=(self.broker.getcash() / self.data.close[0]))
+                if self.params.callback:
+                    self.params.callback({
+                        'signal': 'sell',
+                        'price': self.data.close[0],
+                        'datetime': self.datas[0].datetime.datetime(0)
+                    })
 
         if not self.a_position_closed:
             self.set_stop_loss_take_profit()
@@ -173,29 +121,34 @@ class MACDStrategy(bt.Strategy):
             take_profit = self.a_last_position.price * (1 - self.params.short_takeprofit / 100)
 
         if position_type == 'long' and self.data.close[0] < stop_loss:
-            self.close()
-            self.a_SL_or_TP_hit = True
+            if self.params.callback:
+                self.a_signal = ""
+                self.params.callback({
+                    'signal': 'stop_loss',
+                    'price': self.data.close[0],
+                    'datetime': self.datas[0].datetime.datetime(0)
+                })
         if position_type == 'short' and self.data.close[0] > stop_loss:
-            self.close()
-            self.a_SL_or_TP_hit = True
+            if self.params.callback:
+                self.a_signal = ""
+                self.params.callback({
+                    'signal': 'stop_loss',
+                    'price': self.data.close[0],
+                    'datetime': self.datas[0].datetime.datetime(0)
+                })
         if position_type == 'long' and self.data.close[0] > take_profit:
-            self.close()
-            self.a_SL_or_TP_hit = True
+            if self.params.callback:
+                self.a_signal = ""
+                self.params.callback({
+                    'signal': 'take_profit',
+                    'price': self.data.close[0],
+                    'datetime': self.datas[0].datetime.datetime(0)
+                })
         if position_type == 'short' and self.data.close[0] < take_profit:
-            self.close()
-            self.a_SL_or_TP_hit = True
-
-    def close_long(self):
-        if self.position.size > 0:
-            self.a_total_closed_positions += 1
-            self.close()
-
-    def close_short(self):
-        if self.position.size < 0:
-            self.a_total_closed_positions += 1
-            self.close()
-
-    def print_results(self):
-        print(f"Total Closed Positions: {self.a_total_closed_positions}")
-        print(f"Total Calculated Profit: {self.a_calculated_profit}")
-        print(f"Final Portfolio Value: {self.broker.getvalue()}")
+            if self.params.callback:
+                self.a_signal = ""
+                self.params.callback({
+                    'signal': 'take_profit',
+                    'price': self.data.close[0],
+                    'datetime': self.datas[0].datetime.datetime(0)
+                })
