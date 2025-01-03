@@ -87,13 +87,8 @@ def fetch_1year_data(symbol, interval=Client.KLINE_INTERVAL_3MINUTE, output_fold
     end_date = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
     fetch_and_append_kline_data(symbol, start_date, end_date, interval, output_folder)
     
-<<<<<<< HEAD
-def fetch_1month_data(symbol, interval=Client.KLINE_INTERVAL_3MINUTE, output_folder='./data'):
-    start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-=======
 def fetch_2month_data(symbol, interval=Client.KLINE_INTERVAL_3MINUTE, output_folder='./data'):
     start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
->>>>>>> 1d0020d (from live)
     end_date = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
     fetch_and_append_kline_data(symbol, start_date, end_date, interval, output_folder)
 # Example usage
