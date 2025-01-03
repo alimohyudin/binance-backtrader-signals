@@ -6,11 +6,7 @@ import asyncio
 import websockets
 import json
 from strategy.MACDStrategy import MACDStrategy
-<<<<<<< HEAD
 from fetch_data import fetch_1month_data
-=======
-from fetch_data import fetch_2month_data
->>>>>>> 1d0020d (from live)
 
 count = 1
 last_signal = None
@@ -19,16 +15,7 @@ clients = set()
 
 async def broadcast_signal(signal):
     if clients:  # asyncio.gather doesn't accept an empty list
-<<<<<<< HEAD
         message = json.dumps(signal, default=str)
-=======
-        if signal['datetime'].date() < datetime.datetime.utcnow().date():
-            print("Skipping signal broadcast as it is not from today")
-            return
-        
-        temp_signal = {**signal, 'datetime': signal['datetime'].strftime('%Y-%m-%d %H:%M:%S')}
-        message = json.dumps(temp_signal, default=str)
->>>>>>> 1d0020d (from live)
         await asyncio.gather(*[client.send(message) for client in clients])
 
 async def handler(websocket):
@@ -44,11 +31,7 @@ async def handler(websocket):
             if message == "get_last_signal":
                 if signals:
                     my_last_signal = signals[-1]
-<<<<<<< HEAD
                     signals_serializable = {**my_last_signal, 'datetime': my_last_signal['datetime'].strftime('%Y-%m-%dT%H:%M:%S')}
-=======
-                    signals_serializable = {**my_last_signal, 'datetime': my_last_signal['datetime'].strftime('%Y-%m-%d %H:%M:%S')}
->>>>>>> 1d0020d (from live)
                     await websocket.send(json.dumps(signals_serializable))
     finally:
         clients.remove(websocket)
@@ -123,8 +106,4 @@ async def main():
     await start_server()
 
 if __name__ == '__main__':
-<<<<<<< HEAD
     asyncio.run(main())
-=======
-    asyncio.run(main())
->>>>>>> 1d0020d (from live)
