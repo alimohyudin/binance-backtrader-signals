@@ -5,6 +5,7 @@ from strategy.MACDStrategy import MACDStrategy
 import concurrent.futures
 import itertools
 
+symbol='BTCUSDT'
 
 def get_last_date_of_month(year, month):
     # Get the first day of the next month
@@ -18,13 +19,13 @@ def get_last_date_of_month(year, month):
 
 
 def run_strategy(params):
+    global symbol
     cerebro = bt.Cerebro()
     strategy_params = {k: v for k, v in params.items() if k not in ['start_month', 'end_month']}
     cerebro.addstrategy(MACDStrategy, **strategy_params)
 
     data = bt.feeds.GenericCSVData(
-        dataname='./backtrader/data/BTCUSDT_3m.csv',
-        # dataname='./backtrader/data/BTCUSDT.csv',
+        dataname=f'./backtrader/data/{symbol}_3m.csv',
         dtformat='%m-%d-%YT%H:%M:%S.000Z',  # New format to match '2024-12-01T00:00:00.000Z'
         timeframe=bt.TimeFrame.Minutes,
         
@@ -47,14 +48,19 @@ def run_strategy(params):
     return profit, params
 
 def generate_params_grid():
-    month_pairs = [(10, 12)]
+    month_pairs = [(1, 12)]
     long_stoploss = [5]
     long_takeprofit = [3]
     short_stoploss = [2]
     short_takeprofit = [3]
-    lookback_bars = [55]
-    param_grid = list(itertools.product(month_pairs, long_stoploss, long_takeprofit, short_stoploss, short_takeprofit, lookback_bars))
-    return [{'start_month': p[0][0], 'end_month': p[0][1], 'long_stoploss': p[1], 'long_takeprofit': p[2], 'short_stoploss': p[3], 'short_takeprofit': p[4], 'lookback_bars': p[5]} for p in param_grid]
+    lookback_bars = [50]
+    rsi_period = [15]
+    macd_fast = [200]
+    macd_slow = [60]
+    
+    param_grid = list(itertools.product(month_pairs, long_stoploss, long_takeprofit, short_stoploss, short_takeprofit, lookback_bars, rsi_period, macd_fast, macd_slow))
+    return [{'start_month': p[0][0], 'end_month': p[0][1], 'long_stoploss': p[1], 'long_takeprofit': p[2], 'short_stoploss': p[3], 'short_takeprofit': p[4], 'lookback_bars': p[5], 'rsi_period': p[6], 'macd_fast': p[7], 'macd_slow': p[8]} for p in param_grid]
+    
 
 def test_macd_strategy():
     test_params = generate_params_grid()
@@ -74,5 +80,5 @@ def test_macd_strategy():
     print(f"Best Params: {best_params}, Best Profit: {best_profit}")
 
 if __name__ == '__main__':
-    fetch_1year_data("BTCUSDT", interval='3m', output_folder='./backtrader/data')
+    fetch_1year_data(symbol=symbol, interval='3m', output_folder='./backtrader/data')
     test_macd_strategy()

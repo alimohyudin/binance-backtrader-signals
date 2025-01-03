@@ -28,7 +28,7 @@ def clear_directory(output_folder, symbol):
         print('Error clearing directory:', err)
 
 def fetch_kline_data(symbol, start_date, end_date, interval=Client.KLINE_INTERVAL_3MINUTE):
-    klines = client.futures_historical_klines(symbol, interval, start_date, end_date)
+    klines = client.get_historical_klines(symbol, interval, start_date, end_date)
     return klines
 
 def format_kline_data(kline):

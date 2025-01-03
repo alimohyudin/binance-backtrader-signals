@@ -82,7 +82,7 @@ def run_strategy():
     cerebro.adddata(data)
 
     # Add strategy
-    cerebro.addstrategy(MACDStrategy, lookback_bars=55, callback=_handle_signals_callback)
+    cerebro.addstrategy(MACDStrategy, lookback_bars=55, rsi_period=15, callback=_handle_signals_callback)
 
     # Run
     cerebro.broker.setcash(1000)
