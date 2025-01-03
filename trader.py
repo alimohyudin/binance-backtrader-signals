@@ -16,6 +16,12 @@ clients = set()
 async def broadcast_signal(signal):
     if clients:  # asyncio.gather doesn't accept an empty list
         message = json.dumps(signal, default=str)
+        if signal['datetime'].date() < datetime.datetime.utcnow().date():
+            print("Skipping signal broadcast as it is not from today")
+            return
+        
+        temp_signal = {**signal, 'datetime': signal['datetime'].strftime('%Y-%m-%d %H:%M:%S')}
+        message = json.dumps(temp_signal, default=str)
         await asyncio.gather(*[client.send(message) for client in clients])
 
 async def handler(websocket):
@@ -31,7 +37,7 @@ async def handler(websocket):
             if message == "get_last_signal":
                 if signals:
                     my_last_signal = signals[-1]
-                    signals_serializable = {**my_last_signal, 'datetime': my_last_signal['datetime'].strftime('%Y-%m-%dT%H:%M:%S')}
+                    signals_serializable = {**my_last_signal, 'datetime': my_last_signal['datetime'].strftime('%Y-%m-%d %H:%M:%S')}
                     await websocket.send(json.dumps(signals_serializable))
     finally:
         clients.remove(websocket)

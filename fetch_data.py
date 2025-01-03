@@ -28,7 +28,7 @@ def clear_directory(output_folder, symbol):
         print('Error clearing directory:', err)
 
 def fetch_kline_data(symbol, start_date, end_date, interval=Client.KLINE_INTERVAL_3MINUTE):
-    klines = client.get_futures_historical_klines(symbol, interval, start_date, end_date)
+    klines = client.futures_historical_klines(symbol, interval, start_date, end_date)
     return klines
 
 def format_kline_data(kline):
@@ -87,7 +87,7 @@ def fetch_1year_data(symbol, interval=Client.KLINE_INTERVAL_3MINUTE, output_fold
     end_date = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
     fetch_and_append_kline_data(symbol, start_date, end_date, interval, output_folder)
     
-def fetch_2month_data(symbol, interval=Client.KLINE_INTERVAL_3MINUTE, output_folder='./data'):
+def fetch_1month_data(symbol, interval=Client.KLINE_INTERVAL_3MINUTE, output_folder='./data'):
     start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
     end_date = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
     fetch_and_append_kline_data(symbol, start_date, end_date, interval, output_folder)
