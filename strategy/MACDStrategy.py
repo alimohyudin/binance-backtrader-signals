@@ -10,10 +10,10 @@ class MACDStrategy(bt.Strategy):
     params = (
         ('enable_long_strategy', True),
         ('long_stoploss', 5),  # percent
-        ('long_takeprofit', 2),
+        ('long_takeprofit', 3),
         ('enable_short_strategy', True),
-        ('short_stoploss', 4),
-        ('short_takeprofit', 4),
+        ('short_stoploss', 2),
+        ('short_takeprofit', 3),
         ('rsi_period', 14),
         ('rsi_overbought', 70),
         ('rsi_oversold', 30),
@@ -23,7 +23,7 @@ class MACDStrategy(bt.Strategy):
         ('ema_periods', [9, 21, 50, 100, 200]),
         ('start_date', None),
         ('end_date', None),
-        ('lookback_bars', 10),
+        ('lookback_bars', 55),
         ('callback', None),
     )
 
